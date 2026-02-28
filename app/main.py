@@ -29,7 +29,8 @@ def home():
 <head>
     <title>AI Agent</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/static/styles.css?v=12345">
+    <link rel="stylesheet" href="/static/styles.css?v=12350">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
@@ -87,8 +88,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (type === "agent") {
             const actions = document.createElement("div");
             actions.className = "message-actions";
-            actions.innerHTML = "👍 👎 🔄 📋";
+            actions.innerHTML = `
+                <button class="action-btn"><i data-lucide="copy"></i></button>
+                <button class="action-btn"><i data-lucide="thumbs-up"></i></button>
+                <button class="action-btn"><i data-lucide="thumbs-down"></i></button>
+                <button class="action-btn"><i data-lucide="refresh-cw"></i></button>
+            `;
             wrapper.appendChild(actions);
+            if (window.lucide) {
+                window.lucide.createIcons({ root: wrapper });
+            }
         }
 
         chat.appendChild(wrapper);

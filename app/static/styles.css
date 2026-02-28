@@ -12,12 +12,9 @@ body {
     flex-direction: column;
     background: #020617;
     overflow: hidden;
-}
-body {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
 }
-
 
 /* Header */
 header {
@@ -25,33 +22,17 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: #020617;
 }
 
 .title {
-    color: #ffffff;   /* THIS fixes the problem */
+    color: #ffffff;
+    /* THIS fixes the problem */
     font-size: 18px;
     font-weight: 600;
 }
 
-/* Chat wrapper */
-#chat-container {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    justify-content: center;
-}
-/* Chat container */
-#chat-inner {
-    width: 100%;
-    max-width: 860px;
-    padding: 50px 34px 400px 34px;  /* increase bottom padding */
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-}
-/* #image added baground --------------------------------- */
 
 /* Chat wrapper */
 #chat-container {
@@ -66,7 +47,7 @@ header {
 #chat-inner {
     width: 100%;
     max-width: 860px;
-    padding: 50px 34px 400px 34px;
+    padding: 50px 34px 50px 34px;
     display: flex;
     flex-direction: column;
     gap: 28px;
@@ -77,7 +58,7 @@ header {
 /* LEFT SIDE AI IMAGE */
 #chat-container::before {
     content: "";
-    position: absolute;
+    position: fixed;
     left: 40px;
     top: 50%;
     transform: translateY(-50%);
@@ -94,7 +75,8 @@ header {
     position: relative;
     z-index: 1;
 }
--------------------------------- */
+
+/* -------------------------------- */
 /* Message rows */
 .message {
     width: 100%;
@@ -102,44 +84,87 @@ header {
 
 /* User message */
 .message.user {
-    text-align: right;
-    color: #ffffff;
-    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
 }
 
 /* Agent message */
 .message.agent {
-    text-align: left;
-    color: #d1d5db;
-    font-size: 16px;
-    line-height: 1.75;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 4px;
 }
 
-/* Remove bubble feel */
 .message-inner {
-    width: 100%;
-    max-width: 100%;
     font-size: 16px;
     line-height: 1.7;
 }
 
+/* User bubble */
 .message.user .message-inner {
-    color: #ffffff;
+    color: #ececec;
+    background-color: #2f2f2f;
+    padding: 10px 18px;
+    border-radius: 20px;
+    max-width: 70%;
+    word-wrap: break-word;
 }
 
-/* Floating input bar */
+/* Agent plain text */
+.message.agent .message-inner {
+    color: #d1d5db;
+    background-color: transparent;
+    max-width: 90%;
+}
+
+/* Actions Bar */
+.message-actions {
+    display: flex;
+    gap: 2px;
+    margin-left: -6px;
+    /* slightly shift left to align icon center with text edge */
+}
+
+/* Action Buttons */
+.action-btn {
+    background: transparent;
+    border: none;
+    color: #9CA3AF;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+}
+
+.action-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.5px;
+}
+
+/* Input bar wrapper */
 #input-bar {
-    position: fixed;
-    bottom: 0;
     width: 100%;
     padding: 20px 0;
     background: #020617;
     display: flex;
     justify-content: center;
+    z-index: 10;
 }
 
-
-/* Input wrapper fixed bottom */
+/* Input wrapper */
 #input-bar-inner {
     width: 100%;
     max-width: 860px;
@@ -159,7 +184,7 @@ header {
     background: #1f2937;
     border-radius: 28px;
     padding: 8px 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Input field */
@@ -187,16 +212,16 @@ header {
 #send-btn:hover {
     background: #1d4ed8;
 }
-/* Empty state */
-#empty-state {
-    opacity: 0.4;
-    text-align: center;
-    margin-top: 100px;
-    font-size: 14px;
-}
 
 /* Animation */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

@@ -1,6 +1,5 @@
 from .brain import Brain
 from .memory import Memory
-from app.tools.calculator import calculator
 
 
 SYSTEM_PROMPT = """
@@ -54,14 +53,11 @@ class Agent:
                 try:
                     _, tool_name, tool_input = response.split(":", 2)
 
-                    # if tool_name == "calculator":
-                    #     tool_output = calculator(tool_input)
-                    # else:
-                    #     tool_output = "Unknown tool"
+                    tool_output = "Unknown tool"
 
                     # Add tool result as user input so LLM finishes answer
-                    # self.memory.add("assistant", response)
-                    # self.memory.add("user", f"Tool result: {tool_output}")
+                    self.memory.add("assistant", response)
+                    self.memory.add("user", f"Tool result: {tool_output}")
 
                 except Exception as e:
                     return f"Tool error: {str(e)}"
