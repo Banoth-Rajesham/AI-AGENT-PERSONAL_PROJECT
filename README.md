@@ -3,6 +3,30 @@
 A lightweight, production-ready conversational AI Agent powered by **Groq (LLaMA 3.3 70B)** and served via **FastAPI**.  
 Features a clean, modern Chat UI with real-time messaging, memory across a session, and tool-routing architecture — all running as a local or cloud-hosted web app.
 
+## 🧠 Project Mindmap
+
+```mermaid
+mindmap
+  root((AI Agent))
+    Core System
+      FastAPI Backend
+      Groq LLaMA 70B
+      Memory Management
+    Capabilities
+      Conversational Chat
+      Web Scraping
+      Google Search
+      Image Search
+      LinkedIn Post Generator
+    UI/UX
+      Clean Chat Interface
+      Side Panel Display
+      Markdown Rendering
+    Deployment
+      Docker Container
+      Heroku Cloud
+```
+
 ---
 
 ## 📁 Project Structure
@@ -33,32 +57,39 @@ ai-agent/
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ App Architecture & Flow (Infographic)
 
-```
-User Message
-     │
-     ▼
-FastAPI /chat endpoint (main.py)
-     │
-     ▼
-Agent.run()  (agent.py)
-     │
-     ├──► Memory.add("user", message)
-     │
-     ├──► Brain.chat(memory)  ──►  Groq API (LLaMA 3.3 70B)
-     │                                │
-     │         ◄──────────────────────┘
-     │
-     ├──► If response starts with "USE_TOOL:" → route to tool
-     │
-     └──► Else → Memory.add("assistant", response) → return to user
+```mermaid
+graph TD
+    User([👤 User]) -->|Sends Message| UI(💻 Web UI)
+    UI -->|POST /chat| API[⚡ FastAPI Router]
+    
+    API --> AgentLogic{🤖 Agent Core}
+    AgentLogic -->|Get Context| Memory[(🧠 Conversation Memory)]
+    AgentLogic -->|LLM Prompting| Groq[🧠 Groq API / LLaMA 3.3]
+    Groq --> AgentLogic
+    
+    AgentLogic --> Router{🛠️ Command / Tool Router}
+    
+    Router -->|Detects Task| ToolExec[Execute Tool]
+    ToolExec --> T1(🔍 Google Search)
+    ToolExec --> T2(🌐 Web Scraper)
+    ToolExec --> T3(🖼️ Image Fetcher)
+    ToolExec --> T4(📝 LinkedIn Post Writer)
+    ToolExec --> AgentLogic
+    
+    Router -->|Normal Chat| NormalChat(💬 Format Agent Reply)
+    NormalChat --> AgentLogic
+    
+    AgentLogic -->|Update Context| Memory
+    AgentLogic -->|Returns Data| UI
+    UI -->|Displays Result| User
 ```
 
 - **Brain** — wraps the Groq client; sends full conversation history each call  
 - **Memory** — keeps chat history (system prompt + all USER/Assistant turns) for the session  
-- **Agent** — controls the reasoning loop; supports tool-use routing  
-- **Tools** — extensible registry (currently a placeholder, ready for new tools)  
+- **Agent** — controls the reasoning loop; supports tool-use command routing  
+- **Tools** — extensible registry connecting the agent's brains with external APIs (DuckDuckGo, Jina, Playwright, etc.)
 
 ---
 
