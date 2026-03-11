@@ -1,227 +1,695 @@
+/* ==============================================
+   RESET & BASE
+   ============================================== */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: Inter, Arial, sans-serif;
+    font-family: "Söhne", "ui-sans-serif", "system-ui", -apple-system,
+                 "Segoe UI", Roboto, Ubuntu, sans-serif;
 }
 
 body {
     margin: 0;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: #020617;
+    background: #212121;
     overflow: hidden;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
+    color: #ececec;
 }
 
-/* Header */
+
+/* ==============================================
+   PAGE LAYOUT (two panels side by side)
+   ============================================== */
+#page-layout {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
+
+/* ==============================================
+   LEFT PANEL → Chat
+   ============================================== */
+#chat-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #212121;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+/* ==============================================
+   RIGHT PANEL → Generated Content
+   ============================================== */
+#content-area {
+    width: 45%;
+    background: #171717;
+    padding: 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: width 0.4s ease, opacity 0.4s ease, padding 0.4s ease;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Hidden state: no post generated yet → collapse panel */
+#content-area.content-hidden {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    border-left: none;
+}
+
+/* When panel is visible, chat area shrinks */
+#page-layout:not(:has(.content-hidden)) #chat-area {
+    width: 55%;
+}
+
+#content-area h2 {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.placeholder-text {
+    color: #4b5563;
+    font-style: italic;
+}
+
+#generated-content {
+    color: #d1d5db;
+    line-height: 1.75;
+}
+
+
+/* ==============================================
+   HEADER
+   ============================================== */
 header {
-    height: 60px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: #020617;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: #212121;
+    flex-shrink: 0;
 }
 
 .title {
     color: #ffffff;
-    /* THIS fixes the problem */
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
+    letter-spacing: 0.015em;
 }
 
 
-/* Chat wrapper */
+/* ==============================================
+   CHAT SCROLL AREA
+   ============================================== */
 #chat-container {
-    position: relative;
     flex: 1;
     overflow-y: auto;
     display: flex;
     justify-content: center;
+    scroll-behavior: smooth;
 }
 
-/* Chat inner */
+/* Scrollbar styling */
+#chat-container::-webkit-scrollbar {
+    width: 5px;
+}
+#chat-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+#chat-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+
 #chat-inner {
     width: 100%;
-    max-width: 860px;
-    padding: 50px 34px 50px 34px;
+    max-width: 760px;
+    padding: 40px 24px 60px 24px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
-    position: relative;
-    z-index: 1;
+    gap: 0;
 }
 
-/* LEFT SIDE AI IMAGE */
-#chat-container::before {
-    content: "";
-    position: fixed;
-    left: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 500px;
-    height: 500px;
-    background: url("/static/agent-bg.png") no-repeat center;
-    background-size: contain;
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 0;
-}
 
-#chat-inner {
-    position: relative;
-    z-index: 1;
-}
+/* ==============================================
+   MESSAGE ROWS
+   ============================================== */
 
-/* -------------------------------- */
-/* Message rows */
+/* Each message row */
 .message {
     width: 100%;
+    padding: 6px 0;
+    animation: fadeSlideIn 0.2s ease;
 }
 
-/* User message */
+/* User message → align right */
 .message.user {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    width: 100%;
+    justify-content: flex-end;
+    margin-bottom: 8px;
 }
 
-/* Agent message */
+/* Agent message → align left */
 .message.agent {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 100%;
-    gap: 4px;
+    margin-bottom: 4px;
 }
 
-.message-inner {
-    font-size: 16px;
-    line-height: 1.7;
-}
-
-/* User bubble */
+/* ── User bubble ── */
 .message.user .message-inner {
+    background: #2f2f2f;
     color: #ececec;
-    background-color: #2f2f2f;
-    padding: 10px 18px;
-    border-radius: 20px;
-    max-width: 70%;
+    padding: 12px 18px;
+    border-radius: 18px;
+    max-width: 78%;
+    font-size: 15px;
+    line-height: 1.6;
     word-wrap: break-word;
 }
 
-/* Agent plain text */
+/* ── Agent response ── */
 .message.agent .message-inner {
+    color: #ececec;
+    background: transparent;
+    width: 100%;
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+
+/* ==============================================
+   MARKDOWN RENDERING
+   These styles make AI responses look like ChatGPT
+   ============================================== */
+
+/* Headings inside agent messages */
+.message.agent .message-inner h1,
+#generated-content h1 {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 20px 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.message.agent .message-inner h2,
+#generated-content h2 {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #f9fafb;
+    margin: 18px 0 8px 0;
+}
+
+.message.agent .message-inner h3,
+#generated-content h3 {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #f3f4f6;
+    margin: 14px 0 6px 0;
+}
+
+/* Regular paragraph */
+.message.agent .message-inner p,
+#generated-content p {
+    margin: 4px 0;
+    color: #ececec;
+    line-height: 1.75;
+}
+
+/* Spacing between blocks */
+.message.agent .message-inner .spacer,
+#generated-content .spacer {
+    height: 10px;
+}
+
+/* Bold text */
+.message.agent .message-inner strong,
+#generated-content strong {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Italic text */
+.message.agent .message-inner em,
+#generated-content em {
+    font-style: italic;
     color: #d1d5db;
-    background-color: transparent;
-    max-width: 90%;
 }
 
-/* Actions Bar */
-.message-actions {
-    display: flex;
-    gap: 2px;
-    margin-left: -6px;
-    /* slightly shift left to align icon center with text edge */
+/* Inline code: `code` */
+.message.agent .message-inner code,
+#generated-content code {
+    font-family: "Menlo", "Monaco", "Courier New", monospace;
+    font-size: 13.5px;
+    background: #2d2d2d;
+    color: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Action Buttons */
-.action-btn {
+/* Code block: ```...``` */
+.message.agent .message-inner pre,
+#generated-content pre {
+    background: #161b22;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 12px 0;
+    overflow-x: auto;
+}
+
+.message.agent .message-inner pre code,
+#generated-content pre code {
     background: transparent;
     border: none;
-    color: #9CA3AF;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 6px;
+    padding: 0;
+    font-size: 13.5px;
+    color: #c9d1d9;
+    line-height: 1.65;
+}
+
+/* Bullet list */
+.message.agent .message-inner ul,
+#generated-content ul {
+    margin: 8px 0 8px 0;
+    padding-left: 22px;
+    list-style: disc;
+}
+
+/* Numbered list */
+.message.agent .message-inner ol,
+#generated-content ol {
+    margin: 8px 0 8px 0;
+    padding-left: 22px;
+    list-style: decimal;
+}
+
+/* List items */
+.message.agent .message-inner li,
+#generated-content li {
+    margin: 4px 0;
+    line-height: 1.7;
+    color: #ececec;
+}
+
+/* Horizontal rule */
+.message.agent .message-inner hr,
+#generated-content hr {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 16px 0;
+}
+
+
+/* ==============================================
+   TYPING INDICATOR (animated dots)
+   ============================================== */
+.typing-inner {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
+    gap: 5px;
+    padding: 14px 4px;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #6b7280;
+    animation: bounce 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%           { transform: translateY(-6px); opacity: 1; }
+}
+
+
+/* ==============================================
+   ACTION BUTTONS (Copy, etc.)
+   ============================================== */
+.message-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Show actions when hovering the message */
+.message.agent:hover .message-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    transition: background 0.2s, color 0.2s;
 }
 
 .action-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.1);
     color: #f3f4f6;
 }
 
-.action-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 1.5px;
-}
 
-/* Input bar wrapper */
+/* ==============================================
+   INPUT BAR (bottom of chat)
+   ============================================== */
 #input-bar {
-    width: 100%;
-    padding: 20px 0;
-    background: #020617;
+    padding: 16px 16px 20px 16px;
+    background: #212121;
     display: flex;
     justify-content: center;
-    z-index: 10;
+    flex-shrink: 0;
 }
 
-/* Input wrapper */
-#input-bar-inner {
-    width: 100%;
-    max-width: 860px;
-    display: flex;
-    align-items: center;
-    background: #1f2937;
-    border-radius: 28px;
-    padding: 10px 14px;
-}
-
-/* Inner container */
 #input-bar-inner {
     width: 100%;
     max-width: 760px;
     display: flex;
     align-items: center;
-    background: #1f2937;
-    border-radius: 28px;
-    padding: 8px 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: #2f2f2f;
+    border-radius: 16px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: border-color 0.2s;
 }
 
-/* Input field */
+#input-bar-inner:focus-within {
+    border-color: rgba(255,255,255,0.25);
+}
+
 #message-input {
     flex: 1;
     background: transparent;
     border: none;
     outline: none;
     color: #ffffff;
-    font-size: 16px;
-    padding: 12px 8px;
+    font-size: 15px;
+    padding: 8px 10px;
+    font-family: inherit;
+}
+
+#message-input::placeholder {
+    color: #6b7280;
 }
 
 /* Send button */
 #send-btn {
-    background: #2563eb;
+    background: #ffffff;
     border: none;
-    color: white;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
+    color: #000000;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
 }
 
 #send-btn:hover {
-    background: #1d4ed8;
+    opacity: 0.85;
 }
 
-/* Animation */
-@keyframes fadeIn {
+#send-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+
+/* ==============================================
+   ANIMATIONS
+   ============================================== */
+@keyframes fadeSlideIn {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(8px);
     }
-
     to {
-        opacity: 1;
-        transform: translateY(0);
     }
+}
+
+
+/* ==============================================
+   LINKEDIN FEED POST STYLES
+   ============================================== */
+#generated-content {
+    /* override any fixed colors for container if needed */
+    color: #1a1a1a; 
+}
+
+/* Base Post structure */
+.linkedin-post {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e0dfdc;
+    padding: 16px 16px 12px 16px;
+    margin-bottom: 20px;
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+/* Header Area */
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-author-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-author-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000;
+    line-height: 1.2;
+}
+
+.verified {
+    font-size: 12px;
+    color: #000;
+}
+
+.text-muted {
+    font-size: 14px;
+    color: #666666;
+    font-weight: 400;
+}
+
+.post-author-headline, .post-time {
+    font-size: 12px;
+    color: #666666;
+    line-height: 1.4;
+}
+
+.post-options {
+    font-size: 18px;
+    color: #666666;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Body Area */
+.post-body {
+    color: #000000; 
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* Ensure parsed markdown looks good in the white card */
+.linkedin-post h1, .linkedin-post h2, .linkedin-post h3 {
+    color: #000 !important;
+    border-bottom: none !important;
+    font-size: 1.2em !important;
+    margin: 12px 0 8px 0 !important;
+}
+
+.linkedin-post p {
+    color: #000 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 8px !important;
+}
+
+.linkedin-post strong {
+    color: #000 !important;
+}
+
+.linkedin-post ul, .linkedin-post ol {
+    color: #000 !important;
+    margin-left: 20px !important;
+}
+
+.linkedin-post li {
+    color: #000 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+}
+
+.post-images {
+    margin: 12px 0 0 0;
+}
+
+.post-images img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+    border: 1px solid #e0dfdc;
+    object-fit: cover;
+    max-height: 400px;
+}
+
+/* Footer Stats Area */
+.post-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666666;
+    margin-top: 12px;
+    padding-bottom: 8px;
+}
+
+.post-actions-divider {
+    border-top: 1px solid #e0dfdc;
+    margin: 0 -16px;
+    padding-top: 4px;
+}
+
+/* Footer Action Buttons */
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+    gap: 4px;
+}
+
+.post-action-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #666666;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+
+.post-action-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+
+/* ==============================================
+   POST TO LINKEDIN BUTTON
+   ============================================== */
+.post-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0 4px 0;
+    border-top: 1px solid #e0dfdc;
+    margin-top: 12px;
+}
+
+/* Blue LinkedIn "Post on LinkedIn" button */
+.li-post-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0a66c2;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 24px;
+    font-family: inherit;
+    transition: background 0.2s, transform 0.1s;
+    cursor: pointer;
+}
+
+.li-post-btn:hover {
+    background: #004182;
+    transform: scale(1.02);
+}
+
+/* Grey copy button */
+.li-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid #b0b0b0;
+    color: #444;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 24px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.li-copy-btn:hover {
+    background: #f0f0f0;
+    border-color: #888;
 }

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="AI Agent — your personal AI-powered chat assistant" />
+    <title>AI Agent</title>
+    <link rel="stylesheet" href="/static/styles.css?v=30001" />
+</head>
+
+<body>
+
+    <div id="page-layout">
+
+        <!-- LEFT PANEL: Chat -->
+        <div id="chat-area">
+
+            <header>
+                <div class="title">✦ AI Agent</div>
+            </header>
+
+            <!-- All chat messages go here -->
+            <div id="chat-container">
+                <div id="chat-inner"></div>
+            </div>
+
+            <!-- Message input bar at the bottom -->
+            <div id="input-bar">
+                <div id="input-bar-inner">
+                    <input id="message-input" placeholder="Message AI Agent..." autocomplete="off" />
+                    <button id="send-btn" title="Send message">
+                        <!-- Send arrow icon drawn with pure CSS/HTML -->
+                        &#9650;
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT PANEL: Generated Content -->
+        <div id="content-area" class="content-hidden">
+            <h2>Generated Content</h2>
+            <div id="generated-content">
+                <p class="placeholder-text">Ask me to create a post for LinkedIn, WhatsApp, or any platform to see it here...</p>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+        /*
+         * ─────────────────────────────────────────────────────────
+         *  MARKDOWN PARSER
+         *  A simple markdown-to-HTML converter written in plain JS.
+         *  No libraries. Works fully inside the browser.
+         *
+         *  Supported syntax:
+         *    # H1   ## H2   ### H3
+         *    **bold**   *italic*
+         *    `inline code`
+         *    ```code block```
+         *    - bullet list item
+         *    1. numbered list item
+         *    blank line → paragraph break
+         * ─────────────────────────────────────────────────────────
+         */
+        function parseMarkdown(text) {
+
+            if (!text) return "";
+
+            // Step 1: Escape any raw HTML to prevent injection
+            text = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Step 2: Extract fenced code blocks (```...```) FIRST
+            // We replace them temporarily so inner content is not processed
+            var codeBlocks = [];
+            text = text.replace(/```([\s\S]*?)```/g, function (match, code) {
+                var placeholder = "\x00CODE" + codeBlocks.length + "\x00";
+                codeBlocks.push('<pre><code>' + code.trim() + '</code></pre>');
+                return placeholder;
+            });
+
+            // Step 3: Process line by line
+            var lines = text.split("\n");
+            var html = "";
+            var inList = false;       // tracking if we are inside a <ul>
+            var inOrderedList = false;// tracking if we are inside an <ol>
+
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+
+                // ── Headings: # ## ###
+                if (/^### (.+)/.test(line)) {
+                    closeList();
+                    html += "<h3>" + line.replace(/^### /, "") + "</h3>";
+                    continue;
+                }
+                if (/^## (.+)/.test(line)) {
+                    closeList();
+                    html += "<h2>" + line.replace(/^## /, "") + "</h2>";
+                    continue;
+                }
+                if (/^# (.+)/.test(line)) {
+                    closeList();
+                    html += "<h1>" + line.replace(/^# /, "") + "</h1>";
+                    continue;
+                }
+
+                // ── Horizontal rule: ---
+                if (/^---+$/.test(line.trim())) {
+                    closeList();
+                    html += "<hr />";
+                    continue;
+                }
+
+                // ── Bullet list: - item or * item
+                if (/^[\-\*] (.+)/.test(line)) {
+                    if (inOrderedList) { html += "</ol>"; inOrderedList = false; }
+                    if (!inList) { html += "<ul>"; inList = true; }
+                    html += "<li>" + inlineFormat(line.replace(/^[\-\*] /, "")) + "</li>";
+                    continue;
+                }
+
+                // ── Numbered list: 1. item
+                if (/^\d+\. (.+)/.test(line)) {
+                    if (inList) { html += "</ul>"; inList = false; }
+                    if (!inOrderedList) { html += "<ol>"; inOrderedList = true; }
+                    html += "<li>" + inlineFormat(line.replace(/^\d+\. /, "")) + "</li>";
+                    continue;
+                }
+
+                // ── Blank line → close any open list, add paragraph break
+                if (line.trim() === "") {
+                    closeList();
+                    html += "<div class='spacer'></div>";
+                    continue;
+                }
+
+                // ── Regular paragraph line
+                closeList();
+                html += "<p>" + inlineFormat(line) + "</p>";
+            }
+
+            // Close any list that is still open at the end
+            if (inList) html += "</ul>";
+            if (inOrderedList) html += "</ol>";
+
+            // Step 4: Put the code blocks back in
+            codeBlocks.forEach(function (block, i) {
+                html = html.replace("\x00CODE" + i + "\x00", block);
+            });
+
+            return html;
+
+            // Helper: close open list tags
+            function closeList() {
+                if (inList) { html += "</ul>"; inList = false; }
+                if (inOrderedList) { html += "</ol>"; inOrderedList = false; }
+            }
+        }
+
+
+        /*
+         * ─────────────────────────────────────────────
+         *  INLINE FORMATTER
+         *  Handles bold, italic, and inline code
+         *  within a single line of text.
+         * ─────────────────────────────────────────────
+         */
+        function inlineFormat(text) {
+            // **bold**
+            text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            // *italic*
+            text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+            // `inline code`
+            text = text.replace(/`(.+?)`/g, "<code>$1</code>");
+            return text;
+        }
+
+
+        /*
+         * ─────────────────────────────────────────────
+         *  LINKEDIN CARD TEMPLATE
+         *  Creates a viral-style post layout
+         * ─────────────────────────────────────────────
+         */
+        function createLinkedInCard(text, images) {
+            var contentHtml = parseMarkdown(text);
+            var imagesHtml = "";
+            if (images && images.length > 0) {
+                imagesHtml = '<div class="post-images"><img src="' + images[0] + '" alt="Generated Image" /></div>';
+            }
+
+            // Build the LinkedIn share URL — this opens LinkedIn with the post text pre-filled
+            // The user just clicks "Post" inside LinkedIn. No copy-paste needed!
+            var linkedinUrl = "https://www.linkedin.com/feed/?shareActive=true&text=" + encodeURIComponent(text);
+
+            return `
+    <div class="linkedin-post">
+        <div class="post-body">
+            ${contentHtml}
+        </div>
+        ${imagesHtml}
+        <div class="post-footer-actions">
+            <a class="li-post-btn" href="${linkedinUrl}" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                Post on LinkedIn
+            </a>
+            <button class="li-copy-btn" onclick="
+                navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(text)}')).then(function(){
+                    var btn = document.querySelector('.li-copy-btn');
+                    btn.textContent = '\u2713 Copied!';
+                    setTimeout(function(){ btn.textContent = '\u2398 Copy Text'; }, 2000);
+                });
+            ">&#x2398; Copy Text</button>
+        </div>
+    </div>
+    `;
+        }
+
+
+
+        /*
+         * ─────────────────────────────────────────────
+         *  CHAT UI LOGIC
+         * ─────────────────────────────────────────────
+         */
+        document.addEventListener("DOMContentLoaded", function () {
+
+            var input = document.getElementById("message-input");
+            var chatContainer = document.getElementById("chat-container");
+            var chat = document.getElementById("chat-inner");
+            var sendBtn = document.getElementById("send-btn");
+            var contentBox = document.getElementById("generated-content");
+
+            // Auto-focus the input box when the page loads
+            input.focus();
+
+
+            // ── Smooth scroll to the bottom of the chat ──
+            function scrollToBottom() {
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: "smooth"
+                });
+            }
+
+
+            // ── Add a chat message bubble ──
+            // role = "user" → right-aligned bubble
+            // role = "agent" → left-aligned, with markdown rendered
+            function addMessage(text, role) {
+
+                var wrapper = document.createElement("div");
+                wrapper.className = "message " + role;
+
+                var inner = document.createElement("div");
+                inner.className = "message-inner";
+
+                if (role === "agent") {
+                    // Render markdown for AI responses
+                    inner.innerHTML = parseMarkdown(text);
+                } else {
+                    // Plain text for user messages
+                    inner.textContent = text;
+                }
+
+                wrapper.appendChild(inner);
+
+                // Copy button only for agent messages
+                if (role === "agent") {
+                    var actions = document.createElement("div");
+                    actions.className = "message-actions";
+
+                    var copyBtn = document.createElement("button");
+                    copyBtn.className = "action-btn";
+                    copyBtn.title = "Copy response";
+                    copyBtn.textContent = "⎘ Copy";
+
+                    // Copy the raw text when clicked
+                    copyBtn.addEventListener("click", function () {
+                        navigator.clipboard.writeText(text).then(function () {
+                            copyBtn.textContent = "✓ Copied!";
+                            setTimeout(function () {
+                                copyBtn.textContent = "⎘ Copy";
+                            }, 2000);
+                        });
+                    });
+
+                    actions.appendChild(copyBtn);
+                    wrapper.appendChild(actions);
+                }
+
+                chat.appendChild(wrapper);
+                scrollToBottom();
+            }
+
+
+            // ── Show "Thinking..." while waiting for response ──
+            function showTyping() {
+                var typing = document.createElement("div");
+                typing.className = "message agent";
+                typing.id = "typing-indicator";
+
+                var inner = document.createElement("div");
+                inner.className = "message-inner typing-inner";
+                inner.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+
+                typing.appendChild(inner);
+                chat.appendChild(typing);
+                scrollToBottom();
+            }
+
+
+            // ── Remove the "Thinking..." indicator ──
+            function hideTyping() {
+                var el = document.getElementById("typing-indicator");
+                if (el) el.remove();
+            }
+
+
+            // ── Send message to the server and display response ──
+            async function sendMessage() {
+
+                var text = input.value.trim();
+                if (!text) return;
+
+                sendBtn.disabled = true;
+                input.value = "";
+
+                addMessage(text, "user");
+                showTyping();
+
+                try {
+                    var response = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: text })
+                    });
+
+                    var data = await response.json();
+                    hideTyping();
+
+                    var reply = data.response || "No response received.";
+
+                    // ── Check if this is a generated post (LinkedIn, WhatsApp, etc.) ──
+                    var isPost = typeof reply === "object" && reply.type === "post";
+
+                    if (isPost) {
+                        // It's a post creation response → show in right panel
+                        var postText   = reply.content || "";
+                        var postImages = reply.images  || [];
+                        var platform   = reply.platform || "linkedin";
+
+                        // Confirm to the user in chat (brief message, not the full post)
+                        addMessage("✅ Your " + platform.charAt(0).toUpperCase() + platform.slice(1) + " post is ready! Check the panel on the right →", "agent");
+
+                        // Show the card in the right panel
+                        var contentArea = document.getElementById("content-area");
+                        contentArea.classList.remove("content-hidden");
+                        contentBox.innerHTML = createLinkedInCard(postText, postImages);
+
+                    } else {
+                        // It's a normal chat reply → show in chat only, don't touch right panel
+                        var replyText = typeof reply === "object" ? JSON.stringify(reply) : reply;
+                        addMessage(replyText, "agent");
+                    }
+
+                } catch (err) {
+                    hideTyping();
+                    addMessage("⚠️ Could not reach the server. Please try again.", "agent");
+                }
+
+                sendBtn.disabled = false;
+                input.focus();
+            }
+
+
+            // ── Button click → send message ──
+            sendBtn.addEventListener("click", sendMessage);
+
+            // ── Enter key → send message ──
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" && !sendBtn.disabled) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+        });
+    </script>
+
+</body>
+
+</html>
