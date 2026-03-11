@@ -114,8 +114,8 @@ class Agent:
         # COMMAND 4 → Create a LinkedIn post
         # Example: "create linkedin post about AI in healthcare"
         # ──────────────────────────────────────────
-        if text.startswith("create linkedin post"):
-            topic = user_input.replace("create linkedin post", "").strip()
+        if "linkedin" in text.replace(" ", "") and "post" in text:
+            topic = user_input
 
             # Gather research from tech news sites
             research_sources = [
